@@ -1,0 +1,61 @@
+service: auth-service
+
+plugins:
+  - serverless-pseudo-parameters # плагин подставлять sudo-параметры #{AWS::} в эти yml-конфиги
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 128
+  lambdaHashingVersion: 20201221
+  region: eu-west-1
+  environment:
+    AUTH0_PUBLIC_KEY: ${file(secret.pem)}
+  httpApi:
+    cors: true
+
+functions:
+  auth:
+    handler: dist/index.authAction
+  publicEndpoint:
+    handler: dist/index.publicAction
+    events:
+      - http:
+          path: public
+          method: POST
+  privateEndpoint:
+    handler: dist/index.privateAction
+    events:
+      - http:
+          path: private
+          method: POST
+          authorizer: auth
+
+resources:
+  Resources:
+    # This response is needed for custom authorizer failures cors support ¯\_(ツ)_/¯
+    GatewayResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: EXPIRED_TOKEN
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        StatusCode: '401'
+    AuthFailureGatewayResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: UNAUTHORIZED
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        StatusCode: '401'
+
+custom:
+  authorizer: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:auth-service-${self:provider.stage}-auth
+  bundle:
+    linting: false

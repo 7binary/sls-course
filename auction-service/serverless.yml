@@ -1,0 +1,73 @@
+service: auction-service
+
+plugins:
+  - serverless-pseudo-parameters # плагин подставлять sudo-параметры #{AWS::} в эти yml-конфиги
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  memorySize: 256
+  stage: ${opt:stage, 'dev'} # окружение, по дефолту dev
+  lambdaHashingVersion: 20201221
+  region: eu-west-1
+  environment: # для JS-кода станет доступна в process.env.AUCTIONS_TABLE_NAME
+    AUCTIONS_TABLE_NAME: ${self:custom.AuctionsTable.name}
+  iam:
+    role:
+      statements: # чтоб у Lambda-функции был доступ вписать в базу данных
+        - ${file(iam/AuctionsTableIAM.yml):AuctionsTableIAM}
+
+resources: # AWS CloudFormation language
+  Resources: # ресурс таблицы в базе данных DynamoDB
+    AuctionsTable: ${file(resources/AuctionsTable.yml):AuctionsTable}
+
+functions:
+  # create
+  createAuction:
+    handler: dist/index.createAuction # путь к обработчику.метод на экспорт
+    events:
+      - http:
+          method: POST
+          path: /auctions
+          authorizer: ${self:custom.authorizer}
+
+  # list
+  getAuctions:
+    handler: dist/index.listAuctions
+    events:
+      - http:
+          method: GET
+          path: /auctions
+          authorizer: ${self:custom.authorizer}
+
+  # find one
+  getAuction:
+    handler: dist/index.getAuction
+    events:
+      - http:
+          method: GET
+          path: /auctions/{id}
+          authorizer: ${self:custom.authorizer}
+
+  # bid one
+  placeBid:
+    handler: dist/index.placeBid
+    events:
+      - http:
+          method: PATCH
+          path: /auctions/{id}/bid
+          authorizer: ${self:custom.authorizer}
+
+  # process cron
+  processAuctions:                                   # sls invoke -f processAuctions -l
+    handler: dist/index.processAuctions
+#    events:
+#      - schedule: rate(1 minute)
+
+custom:
+  authorizer: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:auth-service-${self:provider.stage}-auth
+  AuctionsTable:
+    name: !Ref AuctionsTable
+    arn: !GetAtt AuctionsTable.Arn
+  bundle:
+    linting: false # не проверять вебпаком линтинг

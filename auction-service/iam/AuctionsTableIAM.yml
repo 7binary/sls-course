@@ -1,0 +1,11 @@
+AuctionsTableIAM:
+  Effect: Allow
+  Action:
+    - dynamodb:PutItem
+    - dynamodb:GetItem
+    - dynamodb:UpdateItem
+    - dynamodb:Scan
+    - dynamodb:Query
+  Resource:
+    - ${self:custom.AuctionsTable.arn}     # ресурс главной таблицы, по первичному индексу
+    - !Join [ '/', [ '${self:custom.AuctionsTable.arn}', 'index', 'statusAndEndDate' ] ]  # ресурс виртуальной таблицы, по вторичному
