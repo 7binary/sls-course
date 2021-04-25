@@ -37,6 +37,7 @@ functions:
       - http:
           method: POST
           path: /auctions
+          cors: true
           authorizer: ${self:custom.authorizer}
 
   # list
@@ -46,6 +47,7 @@ functions:
       - http:
           method: GET
           path: /auctions
+          cors: true
           authorizer: ${self:custom.authorizer}
 
   # find one
@@ -55,6 +57,7 @@ functions:
       - http:
           method: GET
           path: /auctions/{id}
+          cors: true
           authorizer: ${self:custom.authorizer}
 
   # bid one
@@ -64,6 +67,7 @@ functions:
       - http:
           method: PATCH
           path: /auctions/{id}/bid
+          cors: true
           authorizer: ${self:custom.authorizer}
 
   uploadAuctionPicture:
@@ -72,6 +76,7 @@ functions:
       - http:
           method: PATCH
           path: /auctions/{id}/picture
+          cors: true
           authorizer: ${self:custom.authorizer}
 
   # process cron
