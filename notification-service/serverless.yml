@@ -13,22 +13,26 @@ provider:
   iam:
     role:
       statements:
-        - ${file(iam/SendMailIAM.yml):SendMailIAM}
-        - ${file(iam/MailQueueIAM.yml):MailQueueIAM}
+        - ${file(iam/MailQueueIAM.yml):MailQueueIAM}  # выдаем разрешение забирать из очереди сообщения (sqs:recieveMessage) для ресурса (MailQueue.Arn)
+        - ${file(iam/SendMailIAM.yml):SendMailIAM}    # выдаем разрешение отправлять почту (ses:SendEmail) для любых ресурсов (arn:aws:ses:*)
 
 resources:
   Resources:
-    MailQueue: ${file(resources/MailQueue.yml):MailQueue}
+    MailQueue: ${file(resources/MailQueue.yml):MailQueue} # там указывается тип ресурса (AWS::SQS::Queue) и имя очереди (MailQueue-dev)
+  Outputs:
+    MailQueueArn: ${file(resources/MailQueue.yml):Outputs.MailQueueArn}
+    MailQueueUrl: ${file(resources/MailQueue.yml):Outputs.MailQueueUrl}
 
 functions:
   sendMail:
     handler: dist/index.sendMail
     events:
       - sqs:
-          arn: ${self:custom.mailQueue.arn}
+          arn: ${self:custom.mailQueue.arn} # кастомный параметр, определенный ниже (custom>mailQueue>arn)
           batchSize: 1
 
 custom:
   mailQueue:
     name: MailQueue-${self:provider.stage}
-    arn: !GetAtt MailQueue.Arn
+    arn: !GetAtt MailQueue.Arn # берется из ресурса выше (resources>Resources>MailQueue)
+    url: !Ref MailQueue

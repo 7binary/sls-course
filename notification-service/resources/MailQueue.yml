@@ -1,4 +1,14 @@
 MailQueue:
   Type: AWS::SQS::Queue
   Properties:
-    QueueName: ${self:custom.mailQueue.name}
+    QueueName: ${self:custom.mailQueue.name} # берется из кастомных настроек главного файла (serverless.yml>custom)
+
+Outputs:
+  MailQueueArn:
+    Value: ${self:custom.mailQueue.arn}
+    Export:
+      Name: ${self:custom.mailQueue.name}-Arn # получится MailQueue-dev-Arn
+  MailQueueUrl:
+    Value: ${self:custom.mailQueue.url}
+    Export:
+      Name: ${self:custom.mailQueue.name}-Url # получится MailQueue-dev-Url
