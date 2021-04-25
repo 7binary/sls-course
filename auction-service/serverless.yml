@@ -3,6 +3,8 @@ service: auction-service
 plugins:
   - serverless-pseudo-parameters # плагин подставлять sudo-параметры #{AWS::} в эти yml-конфиги
 
+variablesResolutionMode: 20210326
+
 provider:
   name: aws
   runtime: nodejs12.x
@@ -12,14 +14,20 @@ provider:
   region: eu-west-1
   environment: # для JS-кода станет доступна в process.env.AUCTIONS_TABLE_NAME
     AUCTIONS_TABLE_NAME: ${self:custom.AuctionsTable.name}
+    MAIL_QUEUE_URL: ${self:custom.MailQueue.url}
+    AUCTIONS_BUCKET_NAME: ${self:custom.AuctionsBucket.name}
   iam:
     role:
-      statements: # чтоб у Lambda-функции был доступ вписать в базу данных
-        - ${file(iam/AuctionsTableIAM.yml):AuctionsTableIAM}
+      statements:
+        - ${file(iam/AuctionsTableIAM.yml):AuctionsTableIAM} # чтоб у Lambda-функции был доступ вписать в базу данных AuctionsTable
+        - ${file(iam/MailQueueIAM.yml):MailQueueIAM} # доступ к отправке SQS-сообщения в ресурс MailQueue
+        - ${file(iam/AuctionsBucketIAM.yml):AuctionsBucketIAM} # доступ записывать в S3 AuctionsBucket
 
 resources: # AWS CloudFormation language
-  Resources: # ресурс таблицы в базе данных DynamoDB
+  Resources: # ресурс таблицы в базе данных DynamoDB + ресурс S3 bucket
     AuctionsTable: ${file(resources/AuctionsTable.yml):AuctionsTable}
+    AuctionsBucket: ${file(resources/AuctionsBucket.yml):AuctionsBucket}
+    AuctionsBucketPolicy: ${file(resources/AuctionsBucket.yml):AuctionsBucketPolicy}
 
 functions:
   # create
@@ -58,16 +66,27 @@ functions:
           path: /auctions/{id}/bid
           authorizer: ${self:custom.authorizer}
 
+  uploadAuctionPicture:
+    handler: dist/index.uploadAuctionPicture
+    events:
+      - http:
+          method: PATCH
+          path: /auctions/{id}/picture
+          authorizer: ${self:custom.authorizer}
+
   # process cron
-  processAuctions:                                   # sls invoke -f processAuctions -l
+  processAuctions: # sls invoke -f processAuctions -l
     handler: dist/index.processAuctions
-#    events:
-#      - schedule: rate(1 minute)
+    events:
+      - schedule: rate(1 minute)
 
 custom:
   authorizer: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:auth-service-${self:provider.stage}-auth
   AuctionsTable:
     name: !Ref AuctionsTable
     arn: !GetAtt AuctionsTable.Arn
-  bundle:
-    linting: false # не проверять вебпаком линтинг
+  MailQueue:
+    arn: ${cf:notification-service-${self:provider.stage}.MailQueueArn}
+    url: ${cf:notification-service-${self:provider.stage}.MailQueueUrl}
+  AuctionsBucket:
+    name: zineof-auctions-bucket-${self:provider.stage}

@@ -12,8 +12,9 @@ export interface Auction {
   id: string;
   title: string;
   status: AuctionStatus;
-  highestBid?: AuctionBid;
   createdAt: string;
   endingAt: string;
   seller: string; // E-mail of creator
+  pictureUrl?: string;
+  highestBid?: AuctionBid;
 }
