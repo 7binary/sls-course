@@ -16,6 +16,8 @@ provider:
     AUCTIONS_TABLE_NAME: ${self:custom.AuctionsTable.name}
     MAIL_QUEUE_URL: ${self:custom.MailQueue.url}
     AUCTIONS_BUCKET_NAME: ${self:custom.AuctionsBucket.name}
+  httpApi:
+    cors: true
   iam:
     role:
       statements:
@@ -37,7 +39,6 @@ functions:
       - http:
           method: POST
           path: /auctions
-          cors: true
           authorizer: ${self:custom.authorizer}
 
   # list
@@ -47,7 +48,6 @@ functions:
       - http:
           method: GET
           path: /auctions
-          cors: true
           authorizer: ${self:custom.authorizer}
 
   # find one
@@ -57,7 +57,6 @@ functions:
       - http:
           method: GET
           path: /auctions/{id}
-          cors: true
           authorizer: ${self:custom.authorizer}
 
   # bid one
@@ -67,16 +66,15 @@ functions:
       - http:
           method: PATCH
           path: /auctions/{id}/bid
-          cors: true
           authorizer: ${self:custom.authorizer}
 
+  # image for auction, goes into S3 bucket
   uploadAuctionPicture:
     handler: dist/index.uploadAuctionPicture
     events:
       - http:
           method: PATCH
           path: /auctions/{id}/picture
-          cors: true
           authorizer: ${self:custom.authorizer}
 
   # process cron

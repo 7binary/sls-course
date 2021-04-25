@@ -4,13 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "i:add": "yarn add @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb http-errors @middy/core @middy/http-event-normalizer @middy/http-error-handler @middy/http-json-body-parser @middy/validator ajv ajv-keywords",
+    "i:add": "yarn add @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb http-errors @middy/core @middy/http-event-normalizer @middy/http-error-handler @middy/http-json-body-parser @middy/http-cors @middy/validator ajv ajv-keywords",
     "i:dev": "yarn add -D serverless-pseudo-parameters @babel/core @babel/preset-env @babel/preset-typescript @babel/plugin-transform-runtime webpack webpack-cli babel-loader fork-ts-checker-webpack-plugin typescript @types/node @types/aws-lambda @types/http-errors",
     "build": "webpack",
     "dep": "yarn build && sls deploy -v",
     "upd": "yarn build && sls deploy -v -f createAuction",
     "cron-log": "sls logs -f processAuctions -t",
     "cron-run": "sls invoke -f processAuctions -l",
+    "info": "sls info",
     "remove": "sls remove -v"
   },
   "keywords": [],

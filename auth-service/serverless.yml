@@ -3,10 +3,13 @@ service: auth-service
 plugins:
   - serverless-pseudo-parameters # плагин подставлять sudo-параметры #{AWS::} в эти yml-конфиги
 
+variablesResolutionMode: 20210326
+
 provider:
   name: aws
   runtime: nodejs12.x
   memorySize: 128
+  stage: ${opt:stage, 'dev'} # окружение, по дефолту dev
   lambdaHashingVersion: 20201221
   region: eu-west-1
   environment:
@@ -57,5 +60,3 @@ resources:
 
 custom:
   authorizer: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:auth-service-${self:provider.stage}-auth
-  bundle:
-    linting: false
